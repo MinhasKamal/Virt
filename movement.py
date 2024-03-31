@@ -6,73 +6,50 @@ import cv2
 import json
 import types
 
-
 class Movement:
 
     def __init__(self) -> None:
-        self.name = ""
-        self.repeat = 3
-        self.tracking_joint_list = []
-        self.observing_joint_list = []
-        self.resting_pose_joint_coordinates = []
-        self.flexing_pose_joint_coordinates = []
-        self.resting_pose_image = None
-        self.flexing_pose_image = None
-        self.file_path = ""
+        self.name: str = ""
+        self.repeat: str = "3"
+        self.tracking_joint_list: list[str] = []
+        self.observing_joint_list: list[str] = []
+        self.resting_pose_joint_coordinates: list = []
+        self.flexing_pose_joint_coordinates: list = []
+        self.resting_pose_image: cv2.typing.MatLike = None
+        self.flexing_pose_image: cv2.typing.MatLike = None
+        self.file_path: str = ""
         return
 
     def __str__(self) -> str:
-        string = "{\n"
-        string += "\"name\" : \"" + self.name + "\",\n"
-        string += "\"repeat\" : " + str(self.repeat) + ",\n"
-
-        string += "\"tracking_joint_list\" : ["
-        for tracking_joint in self.tracking_joint_list:
-            string += "\"" + tracking_joint + "\","
-        if self.tracking_joint_list:
-            string = string[:-1] 
-        string += "],\n"
-
-        string += "\"observing_joint_list\" : ["
-        for observing_joint in self.observing_joint_list:
-            string += "\"" + observing_joint + "\","
-        if self.observing_joint_list:
-            string = string[:-1] 
-        string += "],\n"
-
-        string += "\"resting_pose_joint_coordinates\" : ["
-        if self.resting_pose_joint_coordinates:
-            for resting_pose_joint_coordinate in self.resting_pose_joint_coordinates:
-                string += "\n{" 
-                string += "\"x\":" + str(resting_pose_joint_coordinate.x)
-                string += ",\"y\":" + str(resting_pose_joint_coordinate.y)
-                string += ",\"z\":" + str(resting_pose_joint_coordinate.z)
-                string += ",\"visibility\":" + str(resting_pose_joint_coordinate.visibility)
-                string += "},"
-            string = string[:-1]
-        string += "],\n"
-
-        string += "\"flexing_pose_joint_coordinates\" : ["
-        if self.flexing_pose_joint_coordinates:
-            for flexing_pose_joint_coordinate in self.flexing_pose_joint_coordinates:
-                string += "\n{" 
-                string += "\"x\":" + str(flexing_pose_joint_coordinate.x)
-                string += ",\"y\":" + str(flexing_pose_joint_coordinate.y)
-                string += ",\"z\":" + str(flexing_pose_joint_coordinate.z)
-                string += ",\"visibility\":" + str(flexing_pose_joint_coordinate.visibility)
-                string += "},"
-            string = string[:-1]
-        string += "]\n"
-
+        string: str = "{\n"
+        string += f"\"name\" : \"{self.name}\",\n"
+        string += f"\"repeat\" : {self.repeat},\n"
+        string += f"\"tracking_joint_list\" : {json.dumps(self.tracking_joint_list)},\n"
+        string += f"\"observing_joint_list\" : {json.dumps(self.observing_joint_list)},\n"
+        string += f"\"resting_pose_joint_coordinates\" : \
+            [{self._joint_coordinates_to_str(self.resting_pose_joint_coordinates)}],\n"
+        string += f"\"flexing_pose_joint_coordinates\" : \
+            [{self._joint_coordinates_to_str(self.flexing_pose_joint_coordinates)}]\n"
         string += "}\n"
         return string
     
+    def _joint_coordinates_to_str(self, joint_coordinates: list) -> str:
+        joint_str: str = ""
+        if joint_coordinates:
+            for joint_coordinate in joint_coordinates:
+                joint_str += "\n{" 
+                joint_str += f"\"x\":{joint_coordinate.x},"
+                joint_str += f"\"y\":{joint_coordinate.y},"
+                joint_str += f"\"z\":{joint_coordinate.z},"
+                joint_str += f"\"visibility\":{joint_coordinate.visibility}"
+                joint_str += "},"
+            joint_str = joint_str[:-1]
+        return joint_str
+    
     def save(self) -> None:
         file_path = "res/" + self.name + "_" + datetime.today().strftime("%Y%m%d%H%M%S")
-
-        file = open(file_path + ".json", "w")
-        file.write(str(self))
-        file.close()
+        with open(file_path + ".json", "w") as file:
+            file.write(str(self))
 
         cv2.imwrite(file_path + "_rest.jpg", self.resting_pose_image)
         cv2.imwrite(file_path + "_flex.jpg", self.flexing_pose_image)
@@ -80,40 +57,39 @@ class Movement:
         return
 
     @classmethod
-    def from_file(cls, file_path):
-        file = open(file_path + ".json", "r")
-        movement_json = json.load(file)
-        file.close()
+    def from_file(cls, file_path: str):
+        with open(file_path + ".json", "r") as file:
+            movement_json = json.load(file)
 
-        movement = cls()
+        movement: Movement = cls()
         movement.file_path = file_path
         movement.name = movement_json["name"]
         movement.repeat = movement_json["repeat"]
         movement.tracking_joint_list = movement_json["tracking_joint_list"]
         movement.observing_joint_list = movement_json["observing_joint_list"]
         for resting_pose_joint_coordinate in movement_json["resting_pose_joint_coordinates"]:
-            temp = types.SimpleNamespace()
-            temp.x = resting_pose_joint_coordinate["x"]
-            temp.y = resting_pose_joint_coordinate["y"]
-            temp.z = resting_pose_joint_coordinate["z"]
-            temp.visibility = resting_pose_joint_coordinate["visibility"]
-            movement.resting_pose_joint_coordinates.append(temp)
+            movement.flexing_pose_joint_coordinates.append(
+                cls._load_coordinate(resting_pose_joint_coordinate))
         for flexing_pose_joint_coordinate in movement_json["flexing_pose_joint_coordinates"]:
-            temp = types.SimpleNamespace()
-            temp.x = flexing_pose_joint_coordinate["x"]
-            temp.y = flexing_pose_joint_coordinate["y"]
-            temp.z = flexing_pose_joint_coordinate["z"]
-            temp.visibility = flexing_pose_joint_coordinate["visibility"]
-            movement.flexing_pose_joint_coordinates.append(temp)
+            movement.flexing_pose_joint_coordinates.append(
+                cls._load_coordinate(flexing_pose_joint_coordinate))
 
         movement.resting_pose_image = cv2.imread(file_path + "_rest.jpg")
         movement.flexing_pose_image = cv2.imread(file_path + "_flex.jpg")
 
         return movement
+    
+    @classmethod
+    def _load_coordinate(cls, joint_coordinate) -> types.SimpleNamespace:
+        coordinate = types.SimpleNamespace()
+        coordinate.x = joint_coordinate["x"]
+        coordinate.y = joint_coordinate["y"]
+        coordinate.z = joint_coordinate["z"]
+        coordinate.visibility = joint_coordinate["visibility"]
+        return coordinate
 
 
-def __test():
-    movement = Movement().from_file("res/test")
+# test
+if __name__ == "__main__":
+    movement = Movement.from_file("res/test")
     print(movement)
-
-# __test()

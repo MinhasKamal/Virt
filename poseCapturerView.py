@@ -6,182 +6,204 @@ import cv2
 from PIL import ImageTk, Image
 import mediapipe as mp
 import movement
-import skeleton
-import types
+import poseFeedbacker
+import landmarkDrawer
 
 class PoseCapturerView:
-    pose = mp.solutions.pose.Pose(
+    _pose = mp.solutions.pose.Pose(
         min_detection_confidence = 0.5,
         min_tracking_confidence = 0.75,
         model_complexity = 2,
         smooth_landmarks = True
     )
 
+    _stream_label: tk.Label
+    _feedback_label: tk.Label
+    _timer_label: tk.Label
+
+    _waiting_time: int = 5
+
+    camera: cv2.VideoCapture
+
+    _landmark_drawer: landmarkDrawer.LandmarkDrawer
+
     @classmethod
-    def show(cls, view_frame: tk.Frame, doctor_movement: movement.Movement):
+    def show(cls, view_frame: tk.Frame, doctor_movement: movement.Movement) -> None:
         view_frame.name = cls.__name__
-        doctor_movement.resting_pose_image = None
-        doctor_movement.flexing_pose_image = None
 
         prompt_label = tk.Label(
             view_frame,
-            text="Your full body should be visible")
+            text="Press capture when you are ready")
         prompt_label.pack(pady=10)
 
-        stream_label = tk.Label(view_frame)
-        stream_label.pack()
+        cls._stream_label = tk.Label(view_frame)
+        cls._stream_label.mat = None
+        cls._stream_label.isstreaming = False
+        cls._stream_label.pack()
 
-        timer_label = tk.Label(view_frame, font=('Arial', 38))
-        
-        video_stream = types.SimpleNamespace()
-        video_stream.mat = None
-        video_stream.is_run = False
+        cls._feedback_label = tk.Label(
+            view_frame,
+            bg='#ff0',
+            fg='#f00',
+            font=('Arial', 18))
+        cls._feedback_label.isvisible = False
+
+        cls._timer_label = tk.Label(
+            view_frame,
+            bg='#fff',
+            fg='#0f0',
+            font=('Arial', 38))
+        cls._timer_label.waiting_time = cls._waiting_time + 1
+        cls._timer_label.isvisible = False
+
         capture_button = tk.Button(
             view_frame,
             text="Capture movement",
-            command=lambda: cls.__capture_image(
-                doctor_movement, 
-                video_stream, 
-                prompt_label, 
-                timer_label, 
+            command=lambda: cls._capture_image(
+                doctor_movement,
+                prompt_label,
                 capture_button))
         capture_button.pack(pady=10)
 
-        camera = cv2.VideoCapture(0)
-        def run_streaming():
-            _, mat = camera.read()
-            mat = cv2.flip(mat, 1)
-            video_stream.mat = mat.copy()
-            frame_joint = cls.__draw_joints_in_3d_coord_on_2d_img(mat, doctor_movement)
-            img = Image.fromarray(cv2.cvtColor(frame_joint, cv2.COLOR_BGR2RGBA))
-            imgtk = ImageTk.PhotoImage(image=img)
+        cls._landmark_drawer = landmarkDrawer.LandmarkDrawer(doctor_movement)
+        cls._start_streaming(doctor_movement)
+
+        return
+    
+    @classmethod
+    def _start_streaming(cls, doctor_movement):
+        cls.camera = cv2.VideoCapture(0)
+        cls._stream_label.isstreaming = True
+        cls._run_streaming(cls._landmark_drawer, doctor_movement)
+        return
+    
+    @classmethod
+    def _run_streaming(cls, landmark_drawer, doctor_movement):
+        cls._stream_label.mat = cv2.flip(cls.camera.read()[1], 1)
+        pose_landmarks = cls._pose.process(cls._stream_label.mat).pose_landmarks
+
+        cls._update_frame(landmark_drawer, pose_landmarks)
+        cls._update_feedback(poseFeedbacker.PoseFeedbacker.get_feedback(
+            pose_landmarks, doctor_movement))
             
-            stream_label.imgtk = imgtk
-            stream_label.configure(image=imgtk)
-            if video_stream.is_run:
-                stream_label.after(10, lambda:run_streaming())
-            else:
-                camera.release()
-
-            return
-
-        video_stream.is_run = True
-        run_streaming()
+        if cls._stream_label.isstreaming and cls.camera.isOpened():
+            cls._stream_label.after(1, lambda: cls._run_streaming(
+                    landmark_drawer, doctor_movement))
+        else:
+            cls.camera.release()
 
         return
 
     @classmethod
-    def __draw_joints_in_3d_coord_on_2d_img(cls, img, doctor_movement: movement.Movement):
-        tracking_joint_index_list = skeleton.Skeleton.get_mediapipe_index_list(
-            doctor_movement.tracking_joint_list)
-        observing_joint_index_list = skeleton.Skeleton.get_mediapipe_index_list(
-            doctor_movement.observing_joint_list)
-        landmark_drawing_spec = cls.__create_landmark_drawing_spec(
-            tracking_joint_index_list, observing_joint_index_list)
-        
-        pose_landmarks = cls.pose.process(img).pose_landmarks
-        # if pose_landmarks:
-        #     for idx, landmark in enumerate(pose_landmarks.landmark):
-        #         if idx not in tracking_joint_index_list and idx not in observing_joint_index_list:
-        #             landmark.visibility = 0
-
-        mp.solutions.drawing_utils.draw_landmarks(
-            img,
-            pose_landmarks,
-            mp.solutions.pose.POSE_CONNECTIONS,
-            landmark_drawing_spec=landmark_drawing_spec
-            # landmark_drawing_spec=mp.solutions.drawing_styles.get_default_pose_landmarks_style()
-        )
-
-        return img
-    
-    @classmethod
-    def __create_landmark_drawing_spec(cls, tracking_joint_index_list, observing_joint_index_list):
-        _RED = (0, 0, 255)
-        _BLUE = (255, 0, 0)
-        _WHITE = (255, 255, 255)
-        _THIN = 1
-        _THICK = 7
-
-        simple_joint_spec = mp.solutions.drawing_utils.DrawingSpec(
-            color=_WHITE, thickness=_THIN)
-        tracking_joint_spec = mp.solutions.drawing_utils.DrawingSpec(
-            color=_RED, thickness=_THICK)
-        observing_joint_spec = mp.solutions.drawing_utils.DrawingSpec(
-            color=_BLUE, thickness=_THICK)
-        
-        pose_landmark_style = {}
-        for index in range(33):
-            pose_landmark_style[index] = simple_joint_spec
-        for index in tracking_joint_index_list:
-            pose_landmark_style[index] = tracking_joint_spec
-        for index in observing_joint_index_list:
-            pose_landmark_style[index] = observing_joint_spec
-
-        return pose_landmark_style
-
-    @classmethod
-    def __capture_image(cls, doctor_movement: movement.Movement, video_stream,
-                    prompt_label, timer_label, capture_button):
+    def _capture_image(cls, doctor_movement: movement.Movement, prompt_label: tk.Label,
+            capture_button: tk.Button) -> None:
         capture_button['state'] = tk.DISABLED
+        doctor_movement.resting_pose_image = None
+        doctor_movement.flexing_pose_image = None
 
-        waiting_time = 5
-        timer_label.config(text=str(waiting_time+1))
+        if not cls._stream_label.isstreaming:
+            cls._start_streaming(doctor_movement)
 
-        prompt_label.config(text="Get to resting pose")
+        prompt_label['text'] = "Get to resting pose"
 
-        is_resting_pose_not_captured = types.SimpleNamespace()
-        is_resting_pose_not_captured.val = True
         def run_countdown():
-            time = int(timer_label.cget('text'))
+            if cls._feedback_label.isvisible:
+                cls._timer_label.after(500, run_countdown)
+                return
             
-            if time > 1:
-                timer_label.place(relx=.5, rely=.5, anchor="center")
-                timer_label.config(text=str(time-1))
-                timer_label.after(1000, run_countdown)
+            if cls._timer_label.waiting_time > 1:
+                cls._show_and_update_timer()
+                cls._timer_label.after(1000, run_countdown)
             
             else:
-                timer_label.place_forget()
+                cls._hide_and_reset_timer()
 
-                if is_resting_pose_not_captured.val:
-                    doctor_movement.resting_pose_image = video_stream.mat
-                    doctor_movement.resting_pose_joint_coordinates = \
-                        cls.__calc_joints_in_3d_coord(video_stream.mat)
-                    prompt_label.config(text="Resting pose is captured, flex now")
-                    timer_label.config(text=str(waiting_time+1))
-                    is_resting_pose_not_captured.val = False
-                    timer_label.after(3000, run_countdown)
+                if doctor_movement.resting_pose_image is None:
+                    cls._capture_resting_pose(doctor_movement, prompt_label)
+                    cls._timer_label.after(3000, run_countdown)
                 else:
-                    doctor_movement.flexing_pose_image = video_stream.mat
-                    doctor_movement.flexing_pose_joint_coordinates = \
-                        cls.__calc_joints_in_3d_coord(video_stream.mat)
-                    prompt_label.config(text="Flexing pose is also captured, press next")
-                    video_stream.is_run = False
+                    cls._capture_flexing_pose(doctor_movement, prompt_label)
+                    cls._stream_label.isstreaming = False
+                    capture_button['text'] = "Retry"
+                    capture_button['state'] = tk.NORMAL
 
         run_countdown()
         return
+    
+    @classmethod
+    def _update_frame(cls, landmark_drawer: landmarkDrawer.LandmarkDrawer, pose_landmarks) -> None:
+        mat_with_joint = landmark_drawer.draw(cls._stream_label.mat, pose_landmarks)
+        img = Image.fromarray(cv2.cvtColor(mat_with_joint, cv2.COLOR_BGR2RGBA))
+        cls._stream_label.imgtk = ImageTk.PhotoImage(image=img)
+        cls._stream_label.configure(image=cls._stream_label.imgtk)
 
     @classmethod
-    def __calc_joints_in_3d_coord(cls, img):
-        pose_landmarks = cls.pose.process(img).pose_landmarks
+    def _update_feedback(cls, feedback: str) -> None:
+        if feedback:
+            if not cls._feedback_label.isvisible:
+                cls._hide_and_reset_timer()
+                cls._feedback_label.place(relx=.5, rely=.5, anchor="center")
+                cls._feedback_label.isvisible = True
+
+            cls._feedback_label.configure(text=feedback)
+        else:
+            if cls._feedback_label.isvisible:
+                cls._feedback_label.place_forget()
+                cls._feedback_label.isvisible = False
+        return
+    
+    @classmethod
+    def _show_and_update_timer(cls) -> None:
+        if not cls._timer_label.isvisible:
+            cls._timer_label.place(relx=.5, rely=.5, anchor="center")
+            cls._timer_label.isvisible = True
+
+        cls._timer_label.waiting_time -= 1
+        cls._timer_label['text'] = str(cls._timer_label.waiting_time)
+        return
+    
+    @classmethod
+    def _hide_and_reset_timer(cls) -> None:
+        if cls._timer_label.isvisible:
+            cls._timer_label.place_forget()
+            cls._timer_label.waiting_time = cls._waiting_time + 1
+            cls._timer_label.isvisible = False
+        return
+    
+    @classmethod
+    def _capture_resting_pose(cls, doctor_movement: movement.Movement, prompt_label: tk.Label):
+        doctor_movement.resting_pose_image = cls._stream_label.mat
+        doctor_movement.resting_pose_joint_coordinates = \
+            cls._calc_joints_in_3d_coord(cls._stream_label.mat)
+        prompt_label['text'] = "Resting pose is captured, flex now"
+        return
+    
+    @classmethod
+    def _capture_flexing_pose(cls, doctor_movement: movement.Movement, prompt_label: tk.Label):
+        doctor_movement.flexing_pose_image = cls._stream_label.mat
+        doctor_movement.flexing_pose_joint_coordinates = \
+            cls._calc_joints_in_3d_coord(cls._stream_label.mat)
+        prompt_label['text'] = "Flexing pose is also captured, press next"
+        return
+
+    @classmethod
+    def _calc_joints_in_3d_coord(cls, img):
+        pose_landmarks = cls._pose.process(img).pose_landmarks
 
         joints_in_3d_coord = None
-        if pose_landmarks is not None:
+        if pose_landmarks:
             joints_in_3d_coord = pose_landmarks.landmark
-        # print(len(joints_in_3d_coord))
 
         return joints_in_3d_coord
 
-
-def __test():
+# test
+if __name__ == "__main__":
     ui = tk.Tk()
     ui.option_add("*Font", ('Arial', 12))
-    ui.option_add("*Background", "#ffffff")
+    ui.option_add("*Background", "#0f0")
     view_frame = tk.Frame(ui)
     view_frame.pack(fill="both")
     doctor_movement = movement.Movement.from_file("res/test")
     PoseCapturerView.show(view_frame, doctor_movement)
     ui.mainloop()
-    print(doctor_movement)
-
-# __test()
+    # print(doctor_movement)

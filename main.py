@@ -12,132 +12,123 @@ import previewMovementView
 
 class Main:
 
+    view_frame: tk.Frame
+    action_button: tk.Button
+    cancel_button: tk.Button
+
     @classmethod
-    def main(cls):
+    def main(cls) -> None:
+        doctor_movement = movement.Movement()
+
         ui = tk.Tk()
         ui.title("Virt")
         ui.geometry("+0+0")
         ui.option_add("*Font", ('Arial', 12))
-        ui.option_add("*Background", "#ffffff")
+        ui.option_add("*Background", "#fff")
 
-        view_frame = tk.Frame(ui)
-        view_frame.pack(fill="both")
+        cls.view_frame = tk.Frame(ui)
+        cls.view_frame.name = ""
+        cls.view_frame.pack(fill="both")
 
-        doctor_movement = movement.Movement()
-        operation_option = tk.StringVar(view_frame, "0")
-        
-        button_frame = tk.Frame(ui, background='#eeeeee')
-        cancel_button = tk.Button(
-            button_frame,
-            text="Exit",
-            command=lambda:
-            cls.__cancel_button_command(
-                action_button,
-                cancel_button,
-                view_frame,
-                doctor_movement,
-                operation_option))
-        cancel_button.pack(side=tk.LEFT, padx=10)
-        action_button = tk.Button(
-            button_frame,
-            text="Ok",
-            command=lambda:
-            cls.__action_button_command(
-                action_button,
-                cancel_button,
-                view_frame,
-                doctor_movement,
-                operation_option))
-        action_button.pack(side=tk.LEFT, padx=10)
+        button_frame = tk.Frame(ui, bg='#eee')
         button_frame.pack(pady=10)
 
+        operation_option = tk.StringVar(cls.view_frame, "0")
 
-        homeView.HomeView.show(view_frame, operation_option)
+        cls.cancel_button = tk.Button(
+            button_frame,
+            command=lambda:
+            cls._cancel_button_command(
+                doctor_movement,
+                operation_option))
+        cls.cancel_button.pack(side=tk.LEFT, padx=10)
+
+        cls.action_button = tk.Button(
+            button_frame,
+            command=lambda:
+            cls._action_button_command(
+                doctor_movement,
+                operation_option))
+        cls.action_button.pack(side=tk.LEFT, padx=10)
+
+        cls._load_view("Ok", "Exit", homeView.HomeView.show, operation_option)
 
         ui.mainloop()
-        return 0
+        return
 
     @classmethod
-    def __cancel_button_command(
-            cls, action_button, cancel_button, view_frame,
-            doctor_movement: movement.Movement, operation_option):
+    def _cancel_button_command(
+            cls, doctor_movement: movement.Movement, operation_option: tk.StringVar) -> None:
         
-        if view_frame.name == homeView.HomeView.__name__:
-            view_frame.quit()
+        if cls.view_frame.name == homeView.HomeView.__name__:
+            cls.view_frame.quit()
             return
-        elif view_frame.name == poseCapturerView.PoseCapturerView.__name__:
-            if doctor_movement.resting_pose_image is None or \
-                        doctor_movement.flexing_pose_image is None:
-                return
+        elif cls.view_frame.name == poseCapturerView.PoseCapturerView.__name__:
+            if poseCapturerView.PoseCapturerView.camera.isOpened():
+                poseCapturerView.PoseCapturerView.camera.release()
                 
-        cls.__clear_view_frame(view_frame)
-        homeView.HomeView.show(view_frame, operation_option)
-        action_button.config(text="Ok")
-        cancel_button.config(text="Exit")
+        cls._load_view("Ok", "Exit", homeView.HomeView.show, operation_option)
 
         return
 
     @classmethod
-    def __action_button_command(
-            cls, action_button, cancel_button, view_frame,
-            doctor_movement: movement.Movement, operation_option):
+    def _action_button_command(
+            cls, doctor_movement: movement.Movement, operation_option: tk.StringVar) -> None:
         
-        cancel_button.config(text="Cancel")
-
-        if view_frame.name == homeView.HomeView.__name__:
+        if cls.view_frame.name == homeView.HomeView.__name__:
             if operation_option.get() == '1':
-                cls.__clear_view_frame(view_frame)
-                jointSelectorView.JointSelectorView.show(view_frame, doctor_movement)
-                action_button.config(text="Next 1")
+                cls._load_view("Next 1", "Cancel", jointSelectorView.JointSelectorView.show,
+                               doctor_movement)
             elif operation_option.get() == '2':
-                cls.__clear_view_frame(view_frame)
-                openFileView.OpenFileView.show(view_frame, doctor_movement)
-                action_button.config(text="Open")
+                cls._load_view("Open", "Cancel", openFileView.OpenFileView.show,
+                               doctor_movement)
             else:
                 print(operation_option.get())
 
-        elif view_frame.name == jointSelectorView.JointSelectorView.__name__:
-            cls.__clear_view_frame(view_frame)
-            poseCapturerView.PoseCapturerView.show(view_frame, doctor_movement)
-            action_button.config(text="Next 2")
+        elif cls.view_frame.name == jointSelectorView.JointSelectorView.__name__:
+            cls._load_view("Next 2", "Cancel", poseCapturerView.PoseCapturerView.show,
+                           doctor_movement)
 
-        elif view_frame.name == poseCapturerView.PoseCapturerView.__name__:
+        elif cls.view_frame.name == poseCapturerView.PoseCapturerView.__name__:
             if doctor_movement.resting_pose_image is not None and \
                         doctor_movement.flexing_pose_image is not None:
-                cls.__clear_view_frame(view_frame)
-                previewMovementView.PreviewMovementView.show(view_frame, doctor_movement)
-                action_button.config(text="Save")
+                cls._load_view("Save", "Cancel", previewMovementView.PreviewMovementView.show,
+                           doctor_movement)
 
-        elif view_frame.name == previewMovementView.PreviewMovementView.__name__:
-            if operation_option.get() == '1':
+        elif cls.view_frame.name == previewMovementView.PreviewMovementView.__name__:
+            if cls.action_button.cget("text") == "Save":
                 doctor_movement.save()
                 messagebox.showinfo("Saved", "New movement \"" +
                                     doctor_movement.name + "\" is created.")
             
-            cls.__clear_view_frame(view_frame)
-            homeView.HomeView.show(view_frame, operation_option)
-            action_button.config(text="Ok")
-            cancel_button.config(text="Exit")
+            cls._load_view("Ok", "Exit", homeView.HomeView.show, operation_option)
 
-        elif view_frame.name == openFileView.OpenFileView.__name__:
+        elif cls.view_frame.name == openFileView.OpenFileView.__name__:
             if doctor_movement.file_path:
-                cls.__clear_view_frame(view_frame)
                 doctor_movement = movement.Movement.from_file(doctor_movement.file_path)
-                previewMovementView.PreviewMovementView.show(view_frame, doctor_movement)
-                action_button.config(text="Ok")
+                cls._load_view("Ok", "Cancel", previewMovementView.PreviewMovementView.show,
+                           doctor_movement)
 
         else:
-            action_button.config(background="#ff0000")
-
-        return 0
-
-    @classmethod
-    def __clear_view_frame(cls, view_frame):
-        for component in view_frame.winfo_children():
-            component.destroy()
+            cls.action_button.config(bg="#f00")
 
         return
 
+    @classmethod
+    def _load_view(
+            cls, action_button_text: str, cancel_button_text: str,
+            show_func, show_func_arg) -> None:
+        cls._clear_view_frame(cls.view_frame)
+        cls.action_button['text'] = action_button_text
+        cls.cancel_button['text'] = cancel_button_text
+        show_func(cls.view_frame, show_func_arg)
+
+    @classmethod
+    def _clear_view_frame(cls, view_frame: tk.Frame) -> None:
+        for component in view_frame.winfo_children():
+            component.destroy()
+        return
 
 
-Main.main()
+if __name__ == "__main__":
+    Main.main()

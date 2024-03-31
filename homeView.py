@@ -5,7 +5,7 @@ import tkinter as tk
 
 class HomeView:
     @classmethod
-    def show(cls, view_frame: tk.Frame, operation_option: tk.StringVar):
+    def show(cls, view_frame: tk.Frame, operation_option: tk.StringVar) -> None:
         view_frame.name = cls.__name__
 
         tk.Label(
@@ -13,7 +13,6 @@ class HomeView:
             text="Select operation").pack(
                 padx=10,
                 pady=10)
-
         tk.Radiobutton(
             view_frame,
             text="Create new movement",
@@ -21,7 +20,6 @@ class HomeView:
             variable=operation_option).pack(
                 padx=10,
                 pady=10)
-
         tk.Radiobutton(
             view_frame,
             text="Load movement",
@@ -32,11 +30,11 @@ class HomeView:
 
         return
 
-
-def __test():
+# test
+if __name__ == "__main__":
     ui = tk.Tk()
     ui.option_add("*Font", ('Arial', 12))
-    ui.option_add("*Background", "#ffffff")
+    ui.option_add("*Background", "#fff")
     view_frame = tk.Frame(ui)
     view_frame.pack(fill="both")
     operation_option = tk.StringVar(view_frame, "0")
@@ -44,4 +42,3 @@ def __test():
     ui.mainloop()
     print(operation_option.get())
 
-# __test()

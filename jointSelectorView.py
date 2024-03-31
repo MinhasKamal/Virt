@@ -7,11 +7,11 @@ import skeleton
 
 class JointSelectorView:
 
-    normal_color = "#ffffff"
-    tracking_color = "#ff0000"
-    observing_color = "#0000ff"
+    normal_color: str = "#fff"
+    tracking_color: str = "#f00"
+    observing_color: str = "#00f"
 
-    joint_selection_button_properties = [
+    joint_selection_button_properties: list[list] = [
             [skeleton.Skeleton.joints[0][0], 315, 85],
             [skeleton.Skeleton.joints[1][0], 185, 85],
             [skeleton.Skeleton.joints[2][0], 395, 130],
@@ -27,10 +27,11 @@ class JointSelectorView:
         ]
 
     @classmethod
-    def show(cls, view_frame: tk.Frame, doctor_movement: movement.Movement):
+    def show(cls, view_frame: tk.Frame, doctor_movement: movement.Movement) -> None:
         view_frame.name = cls.__name__
 
-        prompt_frame = tk.Frame(view_frame)
+        prompt_frame: tk.Frame = tk.Frame(view_frame)
+        prompt_frame.pack(pady=10)
         tk.Label(
             prompt_frame,
             text="Select joints").pack()
@@ -39,96 +40,99 @@ class JointSelectorView:
             width=1,
             height=1,
             text="",
-            background=cls.tracking_color).pack(
+            bg=cls.tracking_color).pack(
                 side=tk.LEFT)
         tk.Label(
             prompt_frame,
             text="Tracking",
-            foreground=cls.tracking_color).pack(
+            fg=cls.tracking_color).pack(
                 side=tk.LEFT,
                 padx=(0, 20))
         tk.Label(
             prompt_frame,
             width=1,
             height=1,
-            background=cls.observing_color).pack(
+            bg=cls.observing_color).pack(
                 side=tk.LEFT)
         tk.Label(
             prompt_frame,
             text="Observing",
-            foreground=cls.observing_color).pack(
+            fg=cls.observing_color).pack(
                 side=tk.LEFT)
-        prompt_frame.pack(pady=10)
 
-        model_frame = tk.Frame(
+        model_frame: tk.Frame = tk.Frame(
             view_frame,
             width=500,
             height=400)
-        global model_img
-        model_img = tk.PhotoImage(file="res/model.png").subsample(2, 2)
+        model_frame.img = tk.PhotoImage(file="res/model.png").subsample(2, 2)
+        model_frame.pack()
         tk.Label(
             model_frame,
-            image=model_img).place(
+            image=model_frame.img).place(
                 x=0, 
                 y=0, 
                 width=500, 
                 height=400)
         for property in cls.joint_selection_button_properties:
-            cls.__create_joint_selection_button(
+            cls._create_joint_selection_button(
                 model_frame,
                 doctor_movement,
                 text=property[0],
                 x=property[1],
                 y=property[2])
-        model_frame.pack()
 
         return
 
     @classmethod
-    def __create_joint_selection_button(
-            cls, model_frame, doctor_movement: movement.Movement, text, x, y):
+    def _create_joint_selection_button(
+            cls, model_frame: tk.Frame, doctor_movement: movement.Movement,
+            text: str, x: int, y: int) -> None:
         
         button = tk.Button(model_frame, text=text, font=('Arial', 10))
         if text in doctor_movement.tracking_joint_list:
-            button.config(background=cls.tracking_color)
+            button.config(bg=cls.tracking_color)
         elif text in doctor_movement.observing_joint_list:
-            button.config(background=cls.observing_color)
+            button.config(bg=cls.observing_color)
         button.config(
-            command=lambda button=button:
-                cls.__joint_selection_button_command(button, doctor_movement))
+            command=lambda:
+                cls._joint_selection_button_command(button, doctor_movement))
         button.place(x=x, y=y, anchor="center")
 
         return
 
     @classmethod
-    def __joint_selection_button_command(
-            cls, button: tk.Button, doctor_movement: movement.Movement):
+    def _joint_selection_button_command(
+            cls, button: tk.Button, doctor_movement: movement.Movement) -> None:
         
-        joint_name = button.cget('text')
+        joint_name: str = button.cget('text')
 
         if button.cget('bg') == cls.normal_color:
-            button.config(background=cls.tracking_color)
+            button.config(bg=cls.tracking_color)
             doctor_movement.tracking_joint_list.append(joint_name)
         elif button.cget('bg') == cls.tracking_color:
-            button.config(background=cls.observing_color)
+            button.config(bg=cls.observing_color)
             doctor_movement.tracking_joint_list.remove(joint_name)
             doctor_movement.observing_joint_list.append(joint_name)
         else:
-            button.config(background=cls.normal_color)
+            button.config(bg=cls.normal_color)
             doctor_movement.observing_joint_list.remove(joint_name)
 
         return
+    
+    @classmethod
+    def _is_edge_joint(cls, joint_name: str) -> bool:
+        return False
 
 
-def __test():
+# test
+if __name__ == "__main__":
     ui = tk.Tk()
     ui.option_add("*Font", ('Arial', 12))
-    ui.option_add("*Background", "#ffffff")
+    ui.option_add("*Background", "#fff")
     view_frame = tk.Frame(ui)
     view_frame.pack(fill="both")
-    doctor_movement = movement.Movement()
+    # doctor_movement = movement.Movement()
+    doctor_movement = movement.Movement.from_file("res/test")
     JointSelectorView.show(view_frame, doctor_movement)
     ui.mainloop()
     print(doctor_movement)
-
-# __test()
