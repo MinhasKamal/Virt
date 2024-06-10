@@ -1,7 +1,7 @@
 {
 "name" : "kamal",
 "repeat" : 3,
-"dates" : [],
+"dates" : ["20240610001059"],
 "scores" : [],
 "movement_file_path" : "res/test"
 }

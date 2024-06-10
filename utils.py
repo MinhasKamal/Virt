@@ -4,6 +4,9 @@
 import cv2
 from PIL import ImageTk, Image
 
+patient_file_extension: str = ".patient"
+movement_file_extension: str = ".movement"
+
 def get_scaled_imgtk(mat: cv2.typing.MatLike, scaled_height: int) -> ImageTk.PhotoImage:
     resting_pose_img: Image.Image = Image.fromarray(cv2.cvtColor(mat, cv2.COLOR_BGR2RGBA))
     resting_pose_img = resting_pose_img.resize((

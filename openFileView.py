@@ -4,6 +4,7 @@
 import tkinter as tk
 from tkinter import filedialog
 import movement
+import utils
 
 class OpenFileView:
     @classmethod
@@ -44,9 +45,9 @@ class OpenFileView:
         file = filedialog.askopenfile(
             parent=view_frame,
             title='Please select a file',
-            filetypes=[('Movement model', '*.json')])
+            filetypes=[('Patient file', '*' + utils.patient_file_extension)])
         if file:
-            doctor_movement.file_path = file.name[:-5]
+            doctor_movement.file_path = file.name[:-len(utils.patient_file_extension)]
             file_path_entry.delete(0, tk.END)
             file_path_entry.insert(0, doctor_movement.file_path)
         return

@@ -5,6 +5,7 @@ import movement
 import cv2
 import json
 from datetime import datetime
+import utils
 
 class PatientRecord:
     _datetime_format = "%Y%m%d%H%M%S"
@@ -33,13 +34,13 @@ class PatientRecord:
 
     def save(self) -> None:
         # file_path = "res/" + self.name
-        with open(self.file_path + ".json", "w") as file:
+        with open(self.file_path + utils.patient_file_extension, "w") as file:
             file.write(str(self))
         return
 
     @staticmethod
     def from_file(patientRecord, file_path: str):
-        with open(file_path + ".json", "r") as file:
+        with open(file_path + utils.patient_file_extension, "r") as file:
             patientRecord_json = json.load(file)
 
         patientRecord.file_path = file_path

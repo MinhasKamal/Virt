@@ -1,5 +1,8 @@
-# Environment Setup Commands
+# Virt
 
+### Environment Setup Commands
+
+```
 conda create -n virt python=3.11
 
 conda info --envs
@@ -9,7 +12,4 @@ conda info --envs
 
 pip install mediapipe
 pip install opencv-python
-
-
-
-
+```

@@ -5,6 +5,7 @@ from datetime import datetime
 import cv2
 import json
 import types
+import utils
 
 class Movement:
 
@@ -48,7 +49,7 @@ class Movement:
     
     def save(self) -> None:
         file_path = "res/" + self.name + "_" + datetime.today().strftime("%Y%m%d%H%M%S")
-        with open(file_path + ".json", "w") as file:
+        with open(file_path + utils.movement_file_extension, "w") as file:
             file.write(str(self))
 
         cv2.imwrite(file_path + "_rest.jpg", self.resting_pose_image)
@@ -58,7 +59,7 @@ class Movement:
 
     @classmethod
     def from_file(cls, file_path: str):
-        with open(file_path + ".json", "r") as file:
+        with open(file_path + utils.movement_file_extension, "r") as file:
             movement_json = json.load(file)
 
         movement: Movement = cls()
