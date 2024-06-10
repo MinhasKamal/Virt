@@ -3,16 +3,17 @@
 
 import movement
 import skeleton
+import changeDetector
 
 class PoseFeedbacker:
+    _change_detector = changeDetector.ChangeDetector()
+
     @classmethod
     def get_feedback(cls, landmarks, movement: movement.Movement) -> str:
         feed_back = cls._check_visibility_of_related_joints(landmarks, movement)
         if not feed_back:
             feed_back = cls._check_stillness(landmarks, movement)
-
         return feed_back
-
 
     @classmethod
     def _check_visibility_of_related_joints(cls, landmarks, movement: movement.Movement):
@@ -25,13 +26,14 @@ class PoseFeedbacker:
                     break
         else:
             feed_back = "Body is not detected"
-            
+
         return feed_back
-    
+
     @classmethod
     def _check_stillness(cls, landmarks, movement: movement.Movement):
         feed_back = ""
-
-        
-
+        if cls._change_detector.is_changing(skeleton.Skeleton.calc_angle(
+                skeleton.Skeleton.get_mediapipe_index(movement.tracking_joint_list[0]),
+                landmarks.landmark)):
+            feed_back = "Please maintain a still pose"
         return feed_back

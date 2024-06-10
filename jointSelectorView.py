@@ -118,10 +118,6 @@ class JointSelectorView:
             doctor_movement.observing_joint_list.remove(joint_name)
 
         return
-    
-    @classmethod
-    def _is_edge_joint(cls, joint_name: str) -> bool:
-        return False
 
 
 # test

@@ -4,6 +4,9 @@
 import tkinter as tk
 
 class HomeView:
+    create_new_movement_option = "Create new movement"
+    perform_movement_option = "Perform movement"
+
     @classmethod
     def show(cls, view_frame: tk.Frame, operation_option: tk.StringVar) -> None:
         view_frame.name = cls.__name__
@@ -12,21 +15,21 @@ class HomeView:
             view_frame,
             text="Select operation").pack(
                 padx=10,
-                pady=10)
+                pady=(10, 40))
         tk.Radiobutton(
             view_frame,
-            text="Create new movement",
-            value=1,
+            text=cls.create_new_movement_option,
+            value=cls.create_new_movement_option,
             variable=operation_option).pack(
                 padx=10,
-                pady=10)
+                pady=(5, 5))
         tk.Radiobutton(
             view_frame,
-            text="Load movement",
-            value=2,
+            text=cls.perform_movement_option,
+            value=cls.perform_movement_option,
             variable=operation_option).pack(
                 padx=10,
-                pady=10)
+                pady=(5, 50))
 
         return
 

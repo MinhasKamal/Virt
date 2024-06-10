@@ -21,7 +21,9 @@ class PreviewMovementView:
         joint_selector_frame: tk.Frame = tk.Frame(preview_frame)
         joint_selector_frame.pack(side=tk.LEFT, padx=10)
         jointSelectorView.JointSelectorView.show(joint_selector_frame, doctor_movement)
+        tk.Label(preview_frame, text="Resting pose").pack(pady=(10, 0))
         cls._load_image(preview_frame, doctor_movement.resting_pose_image)
+        tk.Label(preview_frame, text="Flexing pose").pack(pady=(10, 0))
         cls._load_image(preview_frame, doctor_movement.flexing_pose_image)
 
         input_frame: tk.Frame = tk.Frame(view_frame)
@@ -35,7 +37,7 @@ class PreviewMovementView:
             input_frame, doctor_movement.name, doctor_movement, cls._record_movement_name)
         tk.Label(
             input_frame,
-            text="Number of repeates").pack(
+            text="Number of repeats").pack(
                 side=tk.LEFT,
                 padx=(10, 0),
                 pady=5)
@@ -43,27 +45,27 @@ class PreviewMovementView:
             input_frame, doctor_movement.repeat, doctor_movement, cls._record_movement_repeat)
 
         return
-    
+
     @classmethod
     def _load_image(cls, frame: tk.Frame, img) -> None:
-        label: tk.Label = tk.Label(frame)
+        label: tk.Label = tk.Label(frame, borderwidth=2, relief="solid")
         if img is not None:
-            label.imgtk = utils.get_scaled_imgtk(img, 220)
+            label.imgtk = utils.get_scaled_imgtk(img, 180)
             label.configure(image=label.imgtk)
         else:
             label.configure(text='No pose img found')
-        label.pack(padx=10)
+        label.pack(padx=5)
 
     @classmethod
     def _create_entry(
             cls, frame: tk.Frame, value, doctor_movement: movement.Movement, record_func) -> None:
         entry: tk.Entry = tk.Entry(frame)
-        entry.insert(0, str(value))#doctor_movement.name
+        entry.insert(0, str(value))
         entry.pack(side=tk.LEFT, pady=5)
         entry.bind(
             '<KeyRelease>', lambda event:
                 record_func(entry, doctor_movement))
-    
+
     @classmethod
     def _record_movement_name(
             cls, name_of_movement_entry: tk.Entry, doctor_movement: movement.Movement) -> None:
@@ -76,7 +78,6 @@ class PreviewMovementView:
         doctor_movement.repeat = number_of_repeats_entry.get()
         return
 
-
 # test
 if __name__ == "__main__":
     ui = tk.Tk()
@@ -84,8 +85,15 @@ if __name__ == "__main__":
     ui.option_add("*Background", "#fff")
     view_frame = tk.Frame(ui)
     view_frame.pack(fill="both")
-    doctor_movement = movement.Movement.from_file("res/test")
+    doctor_movement = movement.Movement.from_file("res/RightElbow_Flexion_20240415153025")
     PreviewMovementView.show(view_frame, doctor_movement)
+
+    button_frame = tk.Frame(ui, bg='#eee')
+    button_frame.pack(pady=10)
+    cancel_button = tk.Button(button_frame, text="Cancel")
+    cancel_button.pack(side=tk.LEFT, padx=10)
+    action_button = tk.Button(button_frame, text="Save")
+    action_button.pack(side=tk.LEFT, padx=10)
+
     ui.mainloop()
     print(doctor_movement)
-

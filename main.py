@@ -4,10 +4,12 @@
 import tkinter as tk
 from tkinter import messagebox
 import movement
+import patientRecord
 import homeView
 import jointSelectorView
 import openFileView
 import poseCapturerView
+import poseCapturerViewPatient
 import previewMovementView
 
 class Main:
@@ -16,15 +18,23 @@ class Main:
     action_button: tk.Button
     cancel_button: tk.Button
 
+    ok_text = "Ok"
+    save_text = "Save"
+    cancel_text = "Cancel"
+    exit_text = "Exit"
+
     @classmethod
     def main(cls) -> None:
         doctor_movement = movement.Movement()
+        patient_record = patientRecord.PatientRecord()
 
         ui = tk.Tk()
         ui.title("Virt")
         ui.geometry("+0+0")
+        ui.state('zoomed')
         ui.option_add("*Font", ('Arial', 12))
         ui.option_add("*Background", "#fff")
+
 
         cls.view_frame = tk.Frame(ui)
         cls.view_frame.name = ""
@@ -38,9 +48,7 @@ class Main:
         cls.cancel_button = tk.Button(
             button_frame,
             command=lambda:
-            cls._cancel_button_command(
-                doctor_movement,
-                operation_option))
+            cls._cancel_button_command(operation_option))
         cls.cancel_button.pack(side=tk.LEFT, padx=10)
 
         cls.action_button = tk.Button(
@@ -48,17 +56,18 @@ class Main:
             command=lambda:
             cls._action_button_command(
                 doctor_movement,
+                patient_record,
                 operation_option))
         cls.action_button.pack(side=tk.LEFT, padx=10)
 
-        cls._load_view("Ok", "Exit", homeView.HomeView.show, operation_option)
+        cls._load_view(cls.ok_text, cls.exit_text, homeView.HomeView.show, operation_option)
 
         ui.mainloop()
         return
 
     @classmethod
     def _cancel_button_command(
-            cls, doctor_movement: movement.Movement, operation_option: tk.StringVar) -> None:
+            cls, operation_option: tk.StringVar) -> None:
         
         if cls.view_frame.name == homeView.HomeView.__name__:
             cls.view_frame.quit()
@@ -66,48 +75,57 @@ class Main:
         elif cls.view_frame.name == poseCapturerView.PoseCapturerView.__name__:
             if poseCapturerView.PoseCapturerView.camera.isOpened():
                 poseCapturerView.PoseCapturerView.camera.release()
+        elif cls.view_frame.name == poseCapturerViewPatient.PoseCapturerViewPatient.__name__:
+            if poseCapturerViewPatient.PoseCapturerViewPatient.camera.isOpened():
+                poseCapturerViewPatient.PoseCapturerViewPatient.camera.release()
                 
-        cls._load_view("Ok", "Exit", homeView.HomeView.show, operation_option)
+        cls._load_view(cls.ok_text, cls.exit_text, homeView.HomeView.show, operation_option)
 
         return
 
     @classmethod
     def _action_button_command(
-            cls, doctor_movement: movement.Movement, operation_option: tk.StringVar) -> None:
+            cls, doctor_movement: movement.Movement, patient_record: patientRecord.PatientRecord,
+            operation_option: tk.StringVar) -> None:
         
         if cls.view_frame.name == homeView.HomeView.__name__:
-            if operation_option.get() == '1':
-                cls._load_view("Next 1", "Cancel", jointSelectorView.JointSelectorView.show,
+            if operation_option.get() == homeView.HomeView.create_new_movement_option:
+                cls._load_view("Next 1", cls.cancel_text, jointSelectorView.JointSelectorView.show,
                                doctor_movement)
-            elif operation_option.get() == '2':
-                cls._load_view("Open", "Cancel", openFileView.OpenFileView.show,
-                               doctor_movement)
+            elif operation_option.get() == homeView.HomeView.perform_movement_option:
+                cls._load_view("Open", cls.cancel_text, openFileView.OpenFileView.show,
+                               patient_record)
             else:
                 print(operation_option.get())
 
         elif cls.view_frame.name == jointSelectorView.JointSelectorView.__name__:
-            cls._load_view("Next 2", "Cancel", poseCapturerView.PoseCapturerView.show,
+            cls._load_view("Next 2", cls.cancel_text, poseCapturerView.PoseCapturerView.show,
                            doctor_movement)
 
         elif cls.view_frame.name == poseCapturerView.PoseCapturerView.__name__:
-            if doctor_movement.resting_pose_image is not None and \
-                        doctor_movement.flexing_pose_image is not None:
-                cls._load_view("Save", "Cancel", previewMovementView.PreviewMovementView.show,
+            if not poseCapturerView.PoseCapturerView.camera.isOpened():
+                cls._load_view(cls.save_text, cls.cancel_text, previewMovementView.PreviewMovementView.show,
                            doctor_movement)
 
         elif cls.view_frame.name == previewMovementView.PreviewMovementView.__name__:
-            if cls.action_button.cget("text") == "Save":
+            if cls.action_button.cget("text") == cls.save_text:
                 doctor_movement.save()
                 messagebox.showinfo("Saved", "New movement \"" +
                                     doctor_movement.name + "\" is created.")
             
-            cls._load_view("Ok", "Exit", homeView.HomeView.show, operation_option)
+            cls._load_view(cls.ok_text, cls.exit_text, homeView.HomeView.show, operation_option)
 
         elif cls.view_frame.name == openFileView.OpenFileView.__name__:
-            if doctor_movement.file_path:
-                doctor_movement = movement.Movement.from_file(doctor_movement.file_path)
-                cls._load_view("Ok", "Cancel", previewMovementView.PreviewMovementView.show,
-                           doctor_movement)
+            if patient_record.file_path:
+                patientRecord.PatientRecord.from_file(patient_record, patient_record.file_path)
+                cls._load_view(cls.save_text, cls.cancel_text,
+                        poseCapturerViewPatient.PoseCapturerViewPatient.show,
+                        patient_record)
+
+        elif cls.view_frame.name == poseCapturerViewPatient.PoseCapturerViewPatient.__name__:
+            if not poseCapturerViewPatient.PoseCapturerViewPatient.camera.isOpened():
+                patient_record.save()
+                cls._load_view(cls.ok_text, cls.exit_text, homeView.HomeView.show, operation_option)
 
         else:
             cls.action_button.config(bg="#f00")

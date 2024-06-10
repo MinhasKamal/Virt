@@ -18,13 +18,13 @@ class Skeleton:
             ["AR", 27, "Right Ancle"],
             ["AL", 28, "Left Ancle"]
         ]
-    
+
     joint_neighbor_lists: list[list[int]] = [
             [16, 14, 12, 24, 26, 28],
             [15, 13, 11, 23, 25, 27],
             # [15, 13, 11, 12, 14, 16] # horizontal
         ]
-    
+
 # poseLandmarkLocations = [
 #     '0 - nose',
 #     '1 - left eye (inner)',
@@ -81,7 +81,7 @@ class Skeleton:
             if joint_name == joint[0]:
                 return joint[2]
         return ""
-    
+
     @classmethod
     def calc_joint_angles(cls, joint_list: list[int], joints_in_3d_coord) -> list[int]:
         angle_list = []
@@ -96,7 +96,7 @@ class Skeleton:
         # print(f"{neighboring_joints[0]} {joint} {neighboring_joints[1]}")
         if neighboring_joints:
             angle_deg = cls._calc_angle_2d(
-                    joints_in_3d_coord[neighboring_joints[0]], 
+                    joints_in_3d_coord[neighboring_joints[0]],
                     joints_in_3d_coord[joint],
                     joints_in_3d_coord[neighboring_joints[1]])
         else:

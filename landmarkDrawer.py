@@ -11,7 +11,8 @@ class LandmarkDrawer:
 
     def __init__(self, movement: movement.Movement) -> None:
         self._landmark_drawing_spec: dict = self._create_landmark_drawing_spec(movement)
-        self._tracking_joints = skeleton.Skeleton.get_mediapipe_index_list(movement.tracking_joint_list)
+        self._tracking_joints = skeleton.Skeleton.get_mediapipe_index_list(
+                movement.tracking_joint_list)
         return
 
     def _create_landmark_drawing_spec(self, movement: movement.Movement) -> dict:

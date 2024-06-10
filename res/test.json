@@ -1,8 +1,8 @@
 {
 "name" : "test",
-"repeat" : 7,
-"tracking_joint_list" : ["SR","ER","KR","AL"],
-"observing_joint_list" : ["SL","HR","AR"],
+"repeat" : 3,
+"tracking_joint_list" : ["ER"],
+"observing_joint_list" : ["SL","WR"],
 "resting_pose_joint_coordinates" : [
 {"x":0.46292057633399963,"y":0.42765453457832336,"z":-0.571673572063446,"visibility":0.9998940229415894},
 {"x":0.48559799790382385,"y":0.3741099536418915,"z":-0.46535295248031616,"visibility":0.9995597004890442},
