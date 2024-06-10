@@ -11,6 +11,7 @@ import openFileView
 import poseCapturerView
 import poseCapturerViewPatient
 import previewMovementView
+import patientView
 
 class Main:
 
@@ -92,6 +93,9 @@ class Main:
             if operation_option.get() == homeView.HomeView.create_new_movement_option:
                 cls._load_view("Next 1", cls.cancel_text, jointSelectorView.JointSelectorView.show,
                                doctor_movement)
+            elif operation_option.get() == homeView.HomeView.create_new_patient_option:
+                cls._load_view(cls.save_text, cls.cancel_text, patientView.PatientView.show,
+                               patient_record)
             elif operation_option.get() == homeView.HomeView.perform_movement_option:
                 cls._load_view("Open", cls.cancel_text, openFileView.OpenFileView.show,
                                patient_record)
@@ -127,6 +131,14 @@ class Main:
                 patient_record.save()
                 cls._load_view(cls.ok_text, cls.exit_text, homeView.HomeView.show, operation_option)
 
+        elif cls.view_frame.name == patientView.PatientView.__name__:
+            if cls.action_button.cget("text") == cls.save_text:
+                patient_record.save()
+                print(patient_record)
+                messagebox.showinfo("Saved", "New patient \"" +
+                                    patient_record.name + "\" is created.")
+            
+            cls._load_view(cls.ok_text, cls.exit_text, homeView.HomeView.show, operation_option)
         else:
             cls.action_button.config(bg="#f00")
 

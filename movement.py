@@ -11,7 +11,6 @@ class Movement:
 
     def __init__(self) -> None:
         self.name: str = ""
-        self.repeat: str = "3"
         self.tracking_joint_list: list[str] = []
         self.observing_joint_list: list[str] = []
         self.resting_pose_joint_coordinates: list = []
@@ -24,7 +23,6 @@ class Movement:
     def __str__(self) -> str:
         string: str = "{\n"
         string += f"\"name\" : \"{self.name}\",\n"
-        string += f"\"repeat\" : {self.repeat},\n"
         string += f"\"tracking_joint_list\" : {json.dumps(self.tracking_joint_list)},\n"
         string += f"\"observing_joint_list\" : {json.dumps(self.observing_joint_list)},\n"
         string += f"\"resting_pose_joint_coordinates\" : \
@@ -48,12 +46,14 @@ class Movement:
         return joint_str
     
     def save(self) -> None:
-        file_path = "res/" + self.name + "_" + datetime.today().strftime("%Y%m%d%H%M%S")
-        with open(file_path + utils.movement_file_extension, "w") as file:
+        if not self.file_path:
+            self.file_path = "res/" + self.name + "_" + datetime.today().strftime("%Y%m%d%H%M%S")
+            
+        with open(self.file_path + utils.movement_file_extension, "w") as file:
             file.write(str(self))
 
-        cv2.imwrite(file_path + "_rest.jpg", self.resting_pose_image)
-        cv2.imwrite(file_path + "_flex.jpg", self.flexing_pose_image)
+        cv2.imwrite(self.file_path + "_rest.jpg", self.resting_pose_image)
+        cv2.imwrite(self.file_path + "_flex.jpg", self.flexing_pose_image)
 
         return
 
@@ -65,7 +65,6 @@ class Movement:
         movement: Movement = cls()
         movement.file_path = file_path
         movement.name = movement_json["name"]
-        movement.repeat = movement_json["repeat"]
         movement.tracking_joint_list = movement_json["tracking_joint_list"]
         movement.observing_joint_list = movement_json["observing_joint_list"]
         for resting_pose_joint_coordinate in movement_json["resting_pose_joint_coordinates"]:

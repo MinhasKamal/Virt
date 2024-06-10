@@ -33,7 +33,8 @@ class PatientRecord:
         return string
 
     def save(self) -> None:
-        # file_path = "res/" + self.name
+        if not self.file_path:
+            self.file_path = "res/" + self.name
         with open(self.file_path + utils.patient_file_extension, "w") as file:
             file.write(str(self))
         return

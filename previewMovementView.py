@@ -35,14 +35,6 @@ class PreviewMovementView:
                 pady=5)
         cls._create_entry(
             input_frame, doctor_movement.name, doctor_movement, cls._record_movement_name)
-        tk.Label(
-            input_frame,
-            text="Number of repeats").pack(
-                side=tk.LEFT,
-                padx=(10, 0),
-                pady=5)
-        cls._create_entry(
-            input_frame, doctor_movement.repeat, doctor_movement, cls._record_movement_repeat)
 
         return
 
@@ -70,12 +62,6 @@ class PreviewMovementView:
     def _record_movement_name(
             cls, name_of_movement_entry: tk.Entry, doctor_movement: movement.Movement) -> None:
         doctor_movement.name = name_of_movement_entry.get()
-        return
-
-    @classmethod
-    def _record_movement_repeat(
-            cls, number_of_repeats_entry: tk.Entry, doctor_movement: movement.Movement) -> None:
-        doctor_movement.repeat = number_of_repeats_entry.get()
         return
 
 # test

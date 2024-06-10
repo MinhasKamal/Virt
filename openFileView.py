@@ -52,7 +52,6 @@ class OpenFileView:
             file_path_entry.insert(0, doctor_movement.file_path)
         return
 
-
     @classmethod
     def _record_file_path(
             cls, file_path_entry: tk.Entry, doctor_movement: movement.Movement) -> None:

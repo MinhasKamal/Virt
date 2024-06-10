@@ -1,6 +1,5 @@
 {
 "name" : "test",
-"repeat" : 3,
 "tracking_joint_list" : ["ER"],
 "observing_joint_list" : ["SR","WR"],
 "resting_pose_joint_coordinates" : [

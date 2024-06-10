@@ -5,6 +5,7 @@ import tkinter as tk
 
 class HomeView:
     create_new_movement_option = "Create new movement"
+    create_new_patient_option = "Create new patient"
     perform_movement_option = "Perform movement"
 
     @classmethod
@@ -20,6 +21,13 @@ class HomeView:
             view_frame,
             text=cls.create_new_movement_option,
             value=cls.create_new_movement_option,
+            variable=operation_option).pack(
+                padx=10,
+                pady=(5, 5))
+        tk.Radiobutton(
+            view_frame,
+            text=cls.create_new_patient_option,
+            value=cls.create_new_patient_option,
             variable=operation_option).pack(
                 padx=10,
                 pady=(5, 5))
