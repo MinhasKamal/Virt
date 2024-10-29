@@ -35,4 +35,4 @@ pip install opencv-python
 }
 ```
 
-See more of my research work [here](https://scholar.google.com/citations?user=SZxTaQgAAAAJ).
+See more of my research works [here](https://scholar.google.com/citations?user=SZxTaQgAAAAJ).
